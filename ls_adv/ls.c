@@ -101,6 +101,8 @@ int _print_ls(ls_opts options)
 
 	while ((dirent_p = readdir(dir_p)) != NULL)
 	{
+		if (options.a != 1 && (dirent_p->d_name)[0] == '.') continue;
+
 		if (options.l > 0 || options.d > 0)
 		{
 			struct stat file_stat;
