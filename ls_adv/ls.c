@@ -1,7 +1,12 @@
+#include <dirent.h>
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <dirent.h>
+#include <unistd.h>
+#include <time.h>
+
+#include <sys/stat.h>
+#include <sys/types.h>
 
 static const struct option long_options[] = 
 {
@@ -26,7 +31,9 @@ typedef struct
 	int d;
 } ls_opts;
 
-void _print_ls(ls_opts options);
+int _print_ls(ls_opts options);
+
+int _print_permissions(char *file_name);
 
 int main(int argc, char *argv[])
 {
@@ -64,7 +71,24 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-void _print_ls(ls_opts options)
+int _print_permission_info(char * filename, struct stat file_stat)
+{
+
+	printf((S_ISDIR(file_stat.st_mode)) ? "d" : "-");
+	printf((file_stat.st_mode & S_IRUSR) ? "r" : "-");
+	printf((file_stat.st_mode & S_IWUSR) ? "w" : "-");
+	printf((file_stat.st_mode & S_IXUSR) ? "x" : "-");
+	printf((file_stat.st_mode & S_IRGRP) ? "r" : "-");
+	printf((file_stat.st_mode & S_IWGRP) ? "w" : "-");
+	printf((file_stat.st_mode & S_IXGRP) ? "x" : "-");
+	printf((file_stat.st_mode & S_IROTH) ? "r" : "-");
+	printf((file_stat.st_mode & S_IWOTH) ? "w" : "-");
+	printf((file_stat.st_mode & S_IXOTH) ? "x" : "-");
+
+	return 0;
+}
+
+int _print_ls(ls_opts options)
 {
 	DIR *dir_p;  
 	struct dirent *dirent_p;
@@ -77,8 +101,22 @@ void _print_ls(ls_opts options)
 
 	while ((dirent_p = readdir(dir_p)) != NULL)
 	{
+		if (options.l > 0 || options.d > 0)
+		{
+			struct stat file_stat;
+
+			if (stat(dirent_p->d_name, &file_stat) < 0) return -1;
+
+			if (options.d > 0 && !S_ISDIR(file_stat.st_mode)) continue;
+
+			_print_permission_info(dirent_p->d_name, file_stat);
+			
+			printf("\t");
+		}
 		printf("%s\n", dirent_p->d_name);
 	}
 	
 	closedir(dir_p);
+
+	return 0;
 }	
