@@ -1,9 +1,12 @@
 #include <dirent.h>
 #include <getopt.h>
+#include <grp.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -71,9 +74,8 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-int _print_permission_info(char * filename, struct stat file_stat)
+int _print_permission_info(struct stat file_stat)
 {
-
 	printf((S_ISDIR(file_stat.st_mode)) ? "d" : "-");
 	printf((file_stat.st_mode & S_IRUSR) ? "r" : "-");
 	printf((file_stat.st_mode & S_IWUSR) ? "w" : "-");
@@ -88,9 +90,40 @@ int _print_permission_info(char * filename, struct stat file_stat)
 	return 0;
 }
 
+int _print_grp_info(struct stat file_stat)
+{
+	struct group *grp;
+
+	if ((grp = getgrgid(file_stat.st_gid)) == NULL) return -1;
+	printf("%s", grp->gr_name);	 
+
+	return 0;
+}
+
+int _print_user_info(struct stat file_stat)
+{
+	struct passwd *usr;
+
+	if ((usr = getpwuid(file_stat.st_uid)) == NULL) return -1;
+	printf("%s", usr->pw_name);	 
+
+	return 0;
+}
+
+int _print_modified_time(struct stat file_stat)
+{
+	char *m_time = ctime(&(file_stat.st_mtime));
+	m_time[strcspn(m_time, "\n")] = 0;
+
+	printf("%s", m_time);
+
+	return 0;
+}
+
 int _print_ls(ls_opts options)
 {
 	DIR *dir_p;  
+	struct stat file_stat;
 	struct dirent *dirent_p;
 
 	if ((dir_p = opendir(".")) == NULL) 
@@ -105,15 +138,24 @@ int _print_ls(ls_opts options)
 
 		if (options.l > 0 || options.d > 0)
 		{
-			struct stat file_stat;
-
 			if (stat(dirent_p->d_name, &file_stat) < 0) return -1;
 
 			if (options.d > 0 && !S_ISDIR(file_stat.st_mode)) continue;
-
-			_print_permission_info(dirent_p->d_name, file_stat);
 			
-			printf("\t");
+			if (options.l > 0)
+			{
+				_print_permission_info(file_stat);
+				printf("\t");
+				_print_user_info(file_stat);
+				printf("\t");
+				_print_grp_info(file_stat);
+				printf("\t");
+				printf("%d", (int)file_stat.st_size);
+				printf("\t");
+				_print_modified_time(file_stat);
+				printf("\t");
+			}
+			
 		}
 		printf("%s\n", dirent_p->d_name);
 	}
