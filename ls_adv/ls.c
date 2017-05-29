@@ -146,6 +146,8 @@ int _print_ls(ls_opts options)
 			{
 				_print_permission_info(file_stat);
 				printf("\t");
+				printf("%d", (int)file_stat.st_nlink);
+				printf("\t");
 				_print_user_info(file_stat);
 				printf("\t");
 				_print_grp_info(file_stat);
