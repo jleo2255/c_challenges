@@ -52,7 +52,7 @@ int _search(char *base_path, int (*compare) (const char *key1, const char *key2)
 		strcat(combined_filename, combined_path);
 		strcat(combined_filename, dirent_p->d_name);
 
-		if (stat(combined_filename, &file_stat) == -1) 
+		if (lstat(combined_filename, &file_stat) == -1) 
 		{
 			perror("stat");
 		}
