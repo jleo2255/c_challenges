@@ -27,7 +27,7 @@ void _check_invariant_conditions(int argc, char *argv[])
 	}
 }
 
-int _search(char *base_path, int (*compare) (const char *key1, const char *key2))
+int _search(char *base_path, char* filename, int (*compare) (const char *key1, const char *key2))
 {
 	DIR *dir_p;
 	struct dirent *dirent_p;
@@ -57,11 +57,14 @@ int _search(char *base_path, int (*compare) (const char *key1, const char *key2)
 			perror("stat");
 		}
 
-		printf("%s\n", combined_filename);
+		if (compare != NULL && (compare(dirent_p->d_name, filename) == 0))
+		{
+			printf("%s\n", combined_filename);
+		}
 
 		if (S_ISDIR(file_stat.st_mode))	
 		{
-			_search(combined_filename, NULL);
+			_search(combined_filename, filename, strcmp);
 		}
 	}
 
@@ -79,13 +82,15 @@ int main(int argc, char *argv[])
 	{
 		base_path[0] = '.';
 		base_path[1] = '\0';
+		strcpy(file_name, argv[1]);
 	}
 	else if (argc == 3)
 	{
 		strcpy(base_path, argv[1]);
+		strcpy(file_name, argv[2]);
 	}
 
-	_search(base_path, NULL);
+	_search(base_path, file_name, strcmp);
 
 	return 0;
 }
