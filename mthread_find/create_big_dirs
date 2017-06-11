@@ -1,0 +1,18 @@
+#!/bin/bash
+
+idir="0"
+dirbase="exdir"
+
+while [ $idir -lt 100 ]; do
+	mkdir $dirbase$idir
+
+	ifile="0"
+	filebase="file"
+	filename="$dirbase$idir/$filebase"
+	while [ $ifile -lt 100 ]; do
+		touch $filename$ifile 
+		ifile=$[ $ifile + 1 ]
+	done
+
+	idir=$[ $idir + 1 ]
+done
