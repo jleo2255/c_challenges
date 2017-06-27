@@ -32,13 +32,33 @@ int main(int argc, char **argv)
                 FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL,
                 error_code_int, system_locale, (PTSTR) &h_locale,
                 0, NULL);
+            
+            if(!f_ok)
+            {
+                HMODULE h_dll = LoadLibraryEx(TEXT("netmsg.dll"), NULL, DONT_RESOLVE_DLL_REFERENCES);
 
+                if(h_dll != NULL)
+                {
+                    f_ok = FormatMessage(
+                        FORMAT_MESSAGE_FROM_HMODULE | FORMAT_MESSAGE_IGNORE_INSERTS |
+                        FORMAT_MESSAGE_ALLOCATE_BUFFER, h_dll, error_code_int,
+                        system_locale, (PTSTR) &h_locale, 0, NULL);
+                    FreeLibrary(h_dll);
+                }
+            }
             if(f_ok && (h_locale != NULL))
             {
                 printf("%s", (LPCTSTR) h_locale);
             }
+            else 
+            {
+                printf("%s", TEXT("no text found for this error number."));
+            }
+
+            return 0;
         }
     } 
    
+    fprintf(stderr, "your input yielded no results"); 
     return 0;
 }
