@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "stdio.h": "c",
+        "fileowner.h": "c",
+        "windef.h": "c",
+        "minwindef.h": "c",
+        "ntdef.h": "c",
+        "corecrt.h": "c"
+    }
+}
