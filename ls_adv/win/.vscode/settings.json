@@ -5,6 +5,7 @@
         "windef.h": "c",
         "minwindef.h": "c",
         "ntdef.h": "c",
-        "corecrt.h": "c"
+        "corecrt.h": "c",
+        "winerror.h": "c"
     }
 }

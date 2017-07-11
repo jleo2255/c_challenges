@@ -7,6 +7,7 @@
 #include "fileowner.h"
 
 static int _set_user(HANDLE *h_file, char **user);
+static int _set_group(HANDLE *h_file, char **group);
 
 owner_info_t *get_fileowner(char *filename)
 {
@@ -29,11 +30,22 @@ owner_info_t *get_fileowner(char *filename)
 		DWORD dw_error_code = 0;
 
 		dw_error_code = GetLastError();
-		_tprintf(TEXT("CreateFile error = %d\n"), dw_error_code);
+		_tprintf(TEXT("CreateFile error = %ld\n"), dw_error_code);
 		return NULL;
 	}
 
-    _set_user(h_file, &(o_info->user));
+    int usr_err = _set_user(h_file, &(o_info->user));
+    int group_err = _set_group(h_file, &(o_info->group));
+
+    if (usr_err == -1)
+    {
+        _tprintf(TEXT("could not set user info\n"));
+    }
+    
+    if (group_err == -1)
+    {
+        _tprintf(TEXT("could not set group info\n"));
+    }
 
     return o_info;
 }
@@ -48,7 +60,7 @@ int destroy_fileowner(owner_info_t *o_info)
         {
             DWORD dw_error_code = GetLastError();
 
-            _tprintf(TEXT("GlobalFree error = %d\n"), dw_error_code);
+            _tprintf(TEXT("GlobalFree error = %ld\n"), dw_error_code);
             return -1;
         }
         o_info->user = NULL;
@@ -62,7 +74,7 @@ int destroy_fileowner(owner_info_t *o_info)
         {
             DWORD dw_error_code = GetLastError();
 
-            _tprintf(TEXT("GlobalFree error = %d\n"), dw_error_code);
+            _tprintf(TEXT("GlobalFree error = %ld\n"), dw_error_code);
             return -1;
         }
         o_info->group = NULL;
@@ -76,7 +88,7 @@ int destroy_fileowner(owner_info_t *o_info)
         {
             DWORD dw_error_code = GetLastError();
 
-            _tprintf(TEXT("GlobalFree error = %d\n"), dw_error_code);
+            _tprintf(TEXT("GlobalFree error = %ld\n"), dw_error_code);
             return -1;
         }
     }
@@ -109,7 +121,7 @@ static int _set_user(HANDLE *h_file, char **user)
         DWORD dw_error_code = 0;
 
         dw_error_code = GetLastError();
-        _tprintf(TEXT("GetSecurityInfo error = %d\n"), dw_error_code);
+        _tprintf(TEXT("GetSecurityInfo error = %ld\n"), dw_error_code);
         return -1;
     }
 
@@ -130,7 +142,7 @@ static int _set_user(HANDLE *h_file, char **user)
         DWORD dw_error_code = 0;
 
         dw_error_code = GetLastError();
-        _tprintf(TEXT("GlobalAlloc error = %d\n"), dw_error_code);
+        _tprintf(TEXT("GlobalAlloc error = %ld\n"), dw_error_code);
         return -1;
     }
 
@@ -141,7 +153,7 @@ static int _set_user(HANDLE *h_file, char **user)
         DWORD dw_error_code = 0;
 
         dw_error_code = GetLastError();
-        _tprintf(TEXT("GlobalAlloc error = %d\n"), dw_error_code);
+        _tprintf(TEXT("GlobalAlloc error = %ld\n"), dw_error_code);
         return -1;
     }
 
@@ -166,7 +178,7 @@ static int _set_user(HANDLE *h_file, char **user)
         }
         else 
         {
-            _tprintf(TEXT("LookupAccountSid error %d\n"), dw_error_code);
+            _tprintf(TEXT("LookupAccountSid error %ld\n"), dw_error_code);
         }
 
         return -1;
@@ -182,7 +194,103 @@ static int _set_user(HANDLE *h_file, char **user)
     return 0;
 }
 
-char *_get_group_name(char *filename)
+static int _set_group(HANDLE *h_file, char **group)
 {
-    PSID p_sid_group = NULL;
+    DWORD dw_rtn_code = 0;
+	PSID p_sid_group = NULL;
+	PSECURITY_DESCRIPTOR p_sd = NULL;
+    BOOL b_rtn_bool = TRUE;
+    LPTSTR account_name = NULL, domain_name = NULL;
+    DWORD dw_account_name = 1, dw_domain_name = 1;
+    SID_NAME_USE e_use = SidTypeGroup;
+
+	// get the owner SID of the file
+    dw_rtn_code = GetSecurityInfo(
+        h_file,
+        SE_FILE_OBJECT,
+        GROUP_SECURITY_INFORMATION,
+        NULL,
+        &p_sid_group, NULL, NULL,
+        &p_sd
+    );
+    
+    if (dw_rtn_code != ERROR_SUCCESS)
+    {
+        DWORD dw_error_code = 0;
+
+        dw_error_code = GetLastError();
+        _tprintf(TEXT("GetSecurityInfo error = %ld\n"), dw_error_code);
+        return -1;
+    }
+
+    b_rtn_bool = LookupAccountSid(
+        NULL,
+        p_sid_group,
+        account_name,
+        (LPDWORD) &dw_account_name,
+        domain_name,
+        (LPDWORD) &dw_domain_name,
+        &e_use
+    );
+
+    account_name = (LPTSTR) GlobalAlloc(GMEM_FIXED, dw_account_name);
+
+    if (account_name == NULL)
+    {
+        DWORD dw_error_code = 0;
+
+        dw_error_code = GetLastError();
+        _tprintf(TEXT("GlobalAlloc error = %ld\n"), dw_error_code);
+        return -1;
+    }
+
+    domain_name = (LPTSTR) GlobalAlloc(GMEM_FIXED, dw_domain_name);
+
+    if (domain_name == NULL)
+    {
+        DWORD dw_error_code = 0;
+
+        dw_error_code = GetLastError();
+        _tprintf(TEXT("GlobalAlloc error = %ld\n"), dw_error_code);
+        return -1;
+    }
+
+    b_rtn_bool = LookupAccountSid(
+        NULL,                       // name of local or remote computer
+        p_sid_group,                // security identifier
+        account_name,               // account name buffer
+        (LPDWORD) &dw_account_name, // account name buffer size
+        domain_name,                // domain name buffer
+        (LPDWORD) &dw_domain_name,  // domain name buffer size
+        &e_use                      // SID type
+    );
+    
+    if (b_rtn_bool == FALSE)
+    {
+        DWORD dw_error_code = 0;
+
+        dw_error_code = GetLastError();
+        if (dw_error_code == ERROR_NONE_MAPPED)
+        {
+            _tprintf(TEXT("Account owner not found for specified SID.\n"));
+        }
+        else 
+        {
+            _tprintf(TEXT("LookupAccountSid error %ld\n"), dw_error_code);
+        }
+
+        return -1;
+    }
+    else
+    {
+        *group = (char *) GlobalAlloc(GMEM_ZEROINIT, dw_domain_name + 1 + dw_account_name);
+        strncpy(*group, domain_name, dw_domain_name);
+        strncat(*group, "/", 1); 
+        strncat(*group, account_name, dw_account_name);
+    }
+
+    GlobalFree(domain_name);
+    GlobalFree(account_name);
+
+    return 0;
 }

@@ -4,6 +4,6 @@
     "version": "0.1.0",
     "command": "gcc",
     "isShellCommand": true,
-    "args": ["fileowner.c", "winls.c", "-o", "winls", "-g"],
+    "args": ["fileowner.c", "winls.c", "-o", "winls", "-g", "-Wall"],
     "showOutput": "always"
 }

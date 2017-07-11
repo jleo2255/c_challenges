@@ -76,42 +76,13 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-int _print_permission_info(struct stat file_stat)
+static int _set_permission_info(struct stat file_stat, char perms[])
 {
-	printf((S_ISDIR(file_stat.st_mode)) ? "d" : "-");
-	printf((file_stat.st_mode & S_IRUSR) ? "r" : "-");
-	printf((file_stat.st_mode & S_IWUSR) ? "w" : "-");
-	printf((file_stat.st_mode & S_IXUSR) ? "x" : "-");
-
-	return 0;
-}
-
-int _print_grp_info(struct stat file_stat)
-{
-	struct group *grp;
-
-	//if ((grp = getgrgid(file_stat.st_gid)) == NULL) return -1;
-	//printf("%s", grp->gr_name);	 
-
-	return 0;
-}
-
-int _print_user_info(struct stat file_stat)
-{
-	struct passwd *usr;
-
-	//if ((usr = getpwuid(file_stat.st_uid)) == NULL) return -1;
-	//printf("%s", usr->pw_name);	 
-
-	return 0;
-}
-
-int _print_modified_time(struct stat file_stat)
-{
-	char *m_time = ctime(&(file_stat.st_mtime));
-	m_time[strcspn(m_time, "\n")] = 0;
-
-	printf("%s", m_time);
+	perms[0] = ((S_ISDIR(file_stat.st_mode)) ? 'd' : '-');
+	perms[1] = ((file_stat.st_mode & S_IRUSR) ? 'r' : '-');
+	perms[2] = ((file_stat.st_mode & S_IWUSR) ? 'w' : '-');
+	perms[3] = ((file_stat.st_mode & S_IXUSR) ? 'x' : '-');
+	perms[4] = '\0';
 
 	return 0;
 }
@@ -142,20 +113,16 @@ int _print_ls(ls_opts options)
 			if (options.l > 0)
 			{
 				owner_info_t *o_info = get_fileowner(dirent_p->d_name);
+				char perms[5];
+				char *m_time = ctime(&(file_stat.st_mtime));
+				m_time[strcspn(m_time, "\n")] = 0;
 
-				_print_permission_info(file_stat);
-				printf("\t");
-				printf("%d", (int)file_stat.st_nlink);
-				printf("\t");
-				//_print_user_info(file_stat);
-				printf("%s", o_info->user);
-				printf("\t");
-				_print_grp_info(file_stat);
-				printf("\t");
-				printf("%d", (int)file_stat.st_size);
-				printf("\t");
-				_print_modified_time(file_stat);
-				printf("\t");
+				_set_permission_info(file_stat, perms);
+
+				_tprintf(TEXT("%s\t  %d\t  %s\t  %s\t  %d\t  %s\t"), 
+					perms, (int)file_stat.st_nlink,
+					o_info->user, o_info->group,
+					(int) file_stat.st_size, m_time);
 
 				destroy_fileowner(o_info);
 			}
