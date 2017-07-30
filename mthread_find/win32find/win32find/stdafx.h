@@ -12,4 +12,12 @@
 
 //reference additional headers your program requires here
 #include <Windows.h>
+
+#include <limits.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include <strsafe.h>
