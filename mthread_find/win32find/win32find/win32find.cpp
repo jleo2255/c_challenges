@@ -67,7 +67,7 @@ void _search(wchar_t base_path[], wchar_t filename[])
 	{
 		if (hDirectory->dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY
 			&& wcscmp(hDirectory->cFileName, L".") != 0
-			&& wcscmp(hDirectory->cFileName, L"..") != 0)
+			&& wcscmp(hDirectory->cFileName, L"..") != 0) // searching \. or \.. really fucks up the results
 		{
 			wchar_t new_bp[MAX_PATH] = L"";
 
@@ -109,6 +109,9 @@ void _search(wchar_t base_path[], wchar_t filename[])
 
 	do 
 	{
+		if (wcscmp(hFile->cFileName, L".") == 0) continue;
+		if (wcscmp(hFile->cFileName, L"..") == 0) continue;
+
 		wchar_t fpn[MAX_PATH] = L"";
 		StringCchCat(fpn, bp_sz + 1, base_path);
 		StringCchCat(fpn, bp_sz + 2, L"\\");
