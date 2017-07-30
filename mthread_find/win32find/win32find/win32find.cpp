@@ -56,6 +56,10 @@ void _search(wchar_t base_path[], wchar_t filename[])
 		if (dw_error_code != ERROR_FILE_NOT_FOUND)
 		{
 			_tprintf(TEXT("FindFirstFile failed %d\n"), dw_error_code);
+			
+			FindClose(findFileResult);
+			FindClose(findDirectoryResult);
+			return;
 		}
 	}
 
@@ -78,7 +82,7 @@ void _search(wchar_t base_path[], wchar_t filename[])
 		
 	} while (FindNextFile(findDirectoryResult, hDirectory));
 
-	wchar_t combined_filename[MAX_PATH] = TEXT("");
+	wchar_t combined_filename[MAX_PATH] = L"";
 
 	StringCchCat(combined_filename, bp_sz + 1, base_path);
 	StringCchCat(combined_filename, bp_sz + 2, TEXT("\\"));
@@ -95,9 +99,11 @@ void _search(wchar_t base_path[], wchar_t filename[])
 		if (dw_error_code != ERROR_FILE_NOT_FOUND)
 		{
 			_tprintf(TEXT("FindFirstFile failed %d\n"), dw_error_code);
-			return;
 		}
 
+		FindClose(findFileResult);
+		FindClose(findDirectoryResult);
+		
 		return;
 	}
 
@@ -112,6 +118,7 @@ void _search(wchar_t base_path[], wchar_t filename[])
 	} while (FindNextFile(findFileResult, hFile));
 
 	FindClose(findFileResult);
+	FindClose(findDirectoryResult);
 }
 
 int main(int argc, char *argv[])
